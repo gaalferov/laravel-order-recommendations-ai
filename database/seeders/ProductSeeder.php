@@ -48,7 +48,7 @@ class ProductSeeder extends Seeder
             [
                 'sku' => 'EQ-V60-02',
                 'name' => 'Hario V60 Pour-Over Dripper',
-                'description' => 'Ceramic pour-over cone for clean, bright coffee. Serves 1–4 cups.',
+                'description' => 'Ceramic pour-over cone for clean, bright coffee. Serves 1-4 cups.',
                 'price_cents' => 2500,
                 'category' => 'Brewing Equipment',
                 'tags' => ['pour-over', 'manual-brew', 'single-cup'],

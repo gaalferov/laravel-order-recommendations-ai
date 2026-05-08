@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Log;
 use Stripe\Checkout\Session;
 use Stripe\Event;
 use Stripe\Exception\SignatureVerificationException;
+use Stripe\Stripe;
 use Stripe\Webhook;
 
 class StripeWebhookController
@@ -24,7 +25,9 @@ class StripeWebhookController
     public function __construct(
         private readonly OrderConfirmationMailer $mailer,
         private readonly ProductRecommender $recommender,
-    ) {}
+    ) {
+        Stripe::setApiKey(config('stripe.secret_key'));
+    }
 
     public function __invoke(Request $request): JsonResponse
     {
@@ -48,9 +51,15 @@ class StripeWebhookController
             return response()->json(['error' => 'Invalid payload'], 400);
         }
 
+        // Idempotency: atomic check-and-set so concurrent retries do not double-send
+        // the order confirmation. We mark the event BEFORE processing - if the side
+        // effect throws, Stripe will retry but the marker stays, so a manual replay
+        // is required to recover. This is the safer trade-off for "at-most-once"
+        // transactional emails: a missed confirmation is recoverable, a duplicate
+        // billed email is not.
         $cacheKey = 'stripe_event_'.$event->id;
 
-        if (Cache::has($cacheKey)) {
+        if (! Cache::add($cacheKey, true, now()->addHours(24))) {
             Log::info('Stripe webhook duplicate event skipped', ['event_id' => $event->id]);
 
             return response()->json(['status' => 'already processed']);
@@ -68,8 +77,6 @@ class StripeWebhookController
                 return response()->json(['error' => 'Processing failed'], 500);
             }
         }
-
-        Cache::put($cacheKey, true, now()->addHours(24));
 
         return response()->json(['status' => 'ok']);
     }

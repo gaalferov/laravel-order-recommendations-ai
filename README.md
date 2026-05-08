@@ -1,6 +1,6 @@
 # Laravel E-commerce: Order Email with AI Recommendations
 
-A Laravel application that receives Stripe `checkout.session.completed` webhooks and sends order confirmation emails via [Mailtrap](https://mailtrap.io) — with **AI-generated product recommendations** pulled from a local product catalog using OpenAI.
+A Laravel application that receives Stripe `checkout.session.completed` webhooks and sends order confirmation emails via [Mailtrap](https://mailtrap.io) - with **AI-generated product recommendations** pulled from a local product catalog using OpenAI.
 
 ## How It Works
 
@@ -12,10 +12,10 @@ Stripe Checkout completes
   POST /api/stripe/webhook
         |
         v
-  Verify Stripe signature ── Invalid? → 400 reject
+  Verify Stripe signature -- Invalid? → 400 reject
         |
         v
-  Check for duplicate ── Already processed? → 200 skip
+  Check for duplicate -- Already processed? → 200 skip
         |
         v
   Retrieve session with expanded line_items
@@ -24,14 +24,14 @@ Stripe Checkout completes
   Match line items to local catalog (by SKU metadata or name)
         |
         v
-  Ask OpenAI for N complementary products ── Failed? → Skip recommendations
+  Ask OpenAI for N complementary products -- Failed? → Skip recommendations
   from the remaining catalog
         |
         v
   Render HTML email (order + recommendations)
         |
         v
-  Send via Mailtrap ── Failed? → 500 (Stripe retries)
+  Send via Mailtrap -- Failed? → 500 (Stripe retries)
   with X-MT-Category header
         |
         v
@@ -40,13 +40,13 @@ Stripe Checkout completes
 
 ## Features
 
-- **Stripe Webhook Verification** — Validates webhook signatures using `Stripe\Webhook::constructEvent()` to reject tampered payloads
-- **Local Product Catalog** — Seeded SQLite catalog. Stripe line items are matched to catalog products via `metadata.sku` (recommended) or by product name as a fallback
-- **AI Recommendations** — OpenAI picks complementary products from the remaining catalog. Each recommendation includes a short reason tied to the customer's purchase
-- **HTML + Text Email** — Inline Blade templates render both the order details and the recommendations section
-- **Mailtrap Category Header** — Every outgoing email carries the configured `X-MT-Category` value so you can filter analytics in the Mailtrap dashboard
-- **Graceful Degradation** — If OpenAI fails, the order confirmation is still sent without the recommendations section. If mail delivery fails, the webhook returns 500 so Stripe retries
-- **Duplicate Handling** — Caches processed event IDs for 24 hours to handle Stripe webhook retries
+- **Stripe Webhook Verification** - Validates webhook signatures using `Stripe\Webhook::constructEvent()` to reject tampered payloads
+- **Local Product Catalog** - Seeded SQLite catalog. Stripe line items are matched to catalog products via `metadata.sku` (recommended) or by product name as a fallback
+- **AI Recommendations** - OpenAI picks complementary products from the remaining catalog. Each recommendation includes a short reason tied to the customer's purchase
+- **HTML + Text Email** - Inline Blade templates render both the order details and the recommendations section
+- **Mailtrap Category Header** - Every outgoing email carries the configured `X-MT-Category` value so you can filter analytics in the Mailtrap dashboard
+- **Graceful Degradation** - If OpenAI fails, the order confirmation is still sent without the recommendations section. If mail delivery fails, the webhook returns 500 so Stripe retries
+- **Duplicate Handling** - Caches processed event IDs for 24 hours to handle Stripe webhook retries
 
 ## Prerequisites
 
@@ -62,8 +62,8 @@ Stripe Checkout completes
 1. **Clone and install**
 
 ```bash
-git clone --depth=1 https://github.com/mailtrap/examples.git
-cd examples/php/laravel-order-recommendations-ai
+git clone https://github.com/gaalferov/laravel-order-recommendations-ai.git
+cd laravel-order-recommendations-ai
 composer install
 ```
 
@@ -154,7 +154,7 @@ Or create a real Checkout Session via the Stripe Dashboard or API and complete i
 
 ## Product Catalog
 
-The seeded catalog lives in [`database/seeders/ProductSeeder.php`](database/seeders/ProductSeeder.php) — edit or replace it to match your own store. Each product has:
+The seeded catalog lives in [`database/seeders/ProductSeeder.php`](database/seeders/ProductSeeder.php) - edit or replace it to match your own store. Each product has:
 
 | Field | Description |
 |---|---|
@@ -227,7 +227,7 @@ if (is_object($stripeProduct)) {
 return null;
 ```
 
-Only resolved products are sent to the AI — unknown items still appear in the email (by Stripe description), they just don't inform the recommendations.
+Only resolved products are sent to the AI - unknown items still appear in the email (by Stripe description), they just don't inform the recommendations.
 
 ### AI Product Recommendations
 
@@ -235,7 +235,7 @@ The `ProductRecommender` service sends OpenAI two things:
 - The purchased items (sku, name, category, tags)
 - The remaining catalog (everything the customer didn't buy)
 
-It asks for N recommendations and validates that each returned SKU exists in the catalog — the AI can't invent products:
+It asks for N recommendations and validates that each returned SKU exists in the catalog - the AI can't invent products:
 
 ```php
 foreach ($decoded['recommendations'] as $rec) {
@@ -264,11 +264,11 @@ The category appears as an `X-MT-Category` header on the outgoing email and show
 
 ### Error Handling
 
-- **Invalid signature** — returns `400`, logged as warning
-- **Duplicate event** — returns `200` with `"already processed"` status
-- **Stripe API failure** — returns `500` so Stripe retries; event NOT cached
-- **OpenAI failure** — logged at warning; email is sent without the recommendations section
-- **Mail delivery failure** — returns `500` so Stripe retries; event NOT cached
+- **Invalid signature** - returns `400`, logged as warning
+- **Duplicate event** - returns `200` with `"already processed"` status
+- **Stripe API failure** - returns `500` so Stripe retries; event NOT cached
+- **OpenAI failure** - logged at warning; email is sent without the recommendations section
+- **Mail delivery failure** - returns `500` so Stripe retries; event NOT cached
 
 ## Links
 

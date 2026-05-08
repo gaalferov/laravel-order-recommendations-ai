@@ -4,7 +4,7 @@ Order ID: {{ $order['order_id'] }}
 
 Items:
 @foreach ($order['items'] as $item)
-- {{ $item['name'] }} × {{ $item['quantity'] }} — {{ $item['price'] }}
+- {{ $item['name'] }} × {{ $item['quantity'] }} - {{ $item['price'] }}
 @endforeach
 
 Total: {{ $order['total'] }}
